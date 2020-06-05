@@ -1,22 +1,26 @@
+PROJECT_NAME := $(shell basename $(CURDIR))
+.DEFAULT_GOAL := help
 
-.DEFAULT_GOAL := build
+.PHONY:phony
 
-fmt:
+fmt: phony ## format the codes
 	@go fmt ./...
-.PHONY:fmt
 
-lint: fmt
+lint: phony ## lint the codes
 	@golint ./...
-.PHONY:lint
 
-vet: fmt
+vet: phony fmt ## vet the codes
 	@go vet ./...
-.PHONY:vet
 
-build: vet
+build: phony vet ## build the binary
 	@go build
-.PHONY:build
 
-run: build
-	@./$(shell basename $(CURDIR))
-.PHONY:run
+run: phony build ## run the binary
+	@./$(PROJECT_NAME)
+
+GREEN  := $(shell tput -Txterm setaf 2)
+RESET  := $(shell tput -Txterm sgr0)
+
+help: phony ## print this help message
+	@awk -F ':|##' '/^[^\t].+?:.*?##/ { printf "${GREEN}%-20s${RESET}%s\n", $$1, $$NF }' $(MAKEFILE_LIST) | \
+        sort

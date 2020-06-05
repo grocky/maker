@@ -10,85 +10,81 @@ import (
 )
 
 const makefileTemplate = `
-.DEFAULT_GOAL := build
+PROJECT_NAME := $(shell basename $(CURDIR))
+.DEFAULT_GOAL := help
 
-fmt:
+.PHONY:phony
+
+fmt: phony ## format the codes
 	@go fmt ./...
-.PHONY:fmt
 
-lint: fmt
+lint: phony fmt ## lint the codes
 	@golint ./...
-.PHONY:lint
 
-vet: fmt
+vet: phony fmt ## format the codes
 	@go vet ./...
 {{- if .shadow}}	@shadow ./...{{end}}
-.PHONY:vet
 
 {{ if not .library}}
-build: vet
+build: phony vet ## build the binary
 	@go build
-.PHONY:build
 
-run: vet
+run: phony vet ## run the binary
 	@go run main.go
-.PHONY:run
 {{ else}}
-build: vet
+build: phony vet ## build the library
 	@go build ./...
-.PHONY:build
 {{end}}
 
 {{- if .test}}
-test: vet
+test: phony vet ## test the codes
 	@go test -v ./...
-.PHONY:test
 {{ end }}
 
 {{- if .bench}}
-bench: vet
+bench: phony vet ## test with benchmarks
 	@go test -v -bench=. -benchmem ./...
-.PHONY:bench
 {{ end }}
 
 {{- if and .test .cover}}
-test-cover: vet
+test-cover: phony vet ## test with coverage
 	@go test -v -cover ./...
-.PHONY:test-cover
 {{ end }}
 
 {{- if and .test .coverHTML}}
-test-cover-html: vet
+test-cover-html: phony vet ## test with coverage in an HTML view
 	@go test -v -cover -coverprofile=c.out ./...
 	@go tool cover -html=c.out
-.PHONY:test-cover-html
 {{ end }}
 
 {{- if .testRace}}
-test-race: vet
+test-race: phony vet ## test and check for race conditions
 	@go test -race ./...
-.PHONY:test-race
 {{ end }}
 
 {{- if .race}}
-build-race: vet
+build-race: phony vet ## build and check for race conditions
 	@go build -race
-.PHONY:build-race
 {{ end }}
 
 {{- if .cpuProfile}}
-test-cpu: vet
+test-cpu: phony vet ## test and profile CPU
 	@go test {{if .bench}}-bench=. -benchmem{{end}} -cpuprofile cpu.out ./...
 	@go tool pprof cpu.out
-.PHONY:test-cpu
 {{ end }}
 
 {{- if .memProfile}}
-test-mem: vet
+test-mem: phony vet ## test and profile memory
 	@go test {{if .bench}}-bench=. -benchmem{{end}} -memprofile mem.out ./...
 	@go tool pprof mem.out
-.PHONY:test-mem
 {{ end }}
+
+GREEN  := $(shell tput -Txterm setaf 2)
+RESET  := $(shell tput -Txterm sgr0)
+
+help: phony ## print this help message
+	@awk -F ':|##' '/^[^\t].+?:.*?##/ { printf "${GREEN}%-20s${RESET}%s\n", $$1, $$NF }' $(MAKEFILE_LIST) | \
+        sort
 `
 
 func main() {

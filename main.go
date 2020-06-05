@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"os"
+	"regexp"
 )
 
 const makefileTemplate = `
@@ -129,7 +130,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = ioutil.WriteFile(dirName+string(os.PathSeparator)+"Makefile", buffer.Bytes(), 0744)
+	regex, err := regexp.Compile("\n\n+")
+	if err != nil {
+		panic(err)
+	}
+	cleanBuf := regex.ReplaceAll(buffer.Bytes(), []byte("\n\n"))
+	err = ioutil.WriteFile(dirName+string(os.PathSeparator)+"Makefile", cleanBuf, 0744)
 	if err != nil {
 		panic(err)
 	}

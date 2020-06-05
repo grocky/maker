@@ -22,5 +22,4 @@ GREEN  := $(shell tput -Txterm setaf 2)
 RESET  := $(shell tput -Txterm sgr0)
 
 help: phony ## print this help message
-	@awk -F ':|##' '/^[^\t].+?:.*?##/ { printf "${GREEN}%-20s${RESET}%s\n", $$1, $$NF }' $(MAKEFILE_LIST) | \
-        sort
+	@awk -F ':|##' '/^[^\t].+?:.*?##/ { printf "${GREEN}%-20s${RESET}%s\n", $$1, $$NF }' $(MAKEFILE_LIST)

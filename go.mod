@@ -1,3 +1,3 @@
-module github.com/jonbodner/maker
+module github.com/grocky/maker
 
 go 1.13

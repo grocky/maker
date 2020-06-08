@@ -10,9 +10,13 @@ import (
 	"regexp"
 )
 
-const makefileTemplate = `
-PROJECT_NAME := $(shell basename $(CURDIR))
-.DEFAULT_GOAL := help
+const makefileTemplate = `.DEFAULT_GOAL := help
+
+BIN = $(CURDIR)/bin
+VERSION ?= $(shell git describe --tags --always --dirty --match=v* 2> /dev/null || echo v0)
+
+$(BIN):
+	@mkdir -p $@
 
 .PHONY:phony
 
@@ -22,13 +26,16 @@ fmt: phony ## format the codes
 lint: phony fmt ## lint the codes
 	@golint ./...
 
-vet: phony fmt ## format the codes
+vet: phony lint ## vet the codes
 	@go vet ./...
 {{- if .shadow}}	@shadow ./...{{end}}
 
 {{ if not .library}}
-build: phony vet ## build the binary
-	@go build
+build: phony vet | $(BIN) ## build the binary
+	@go build \
+		-tags release \
+		-ldflags '-X main.Version=$(VERSION)' \
+		-o $(BIN)/ ./...
 
 run: phony vet ## run the binary
 	@go run main.go
@@ -36,6 +43,9 @@ run: phony vet ## run the binary
 build: phony vet ## build the library
 	@go build ./...
 {{end}}
+
+clean: phony
+	rm -rf $(BIN)
 
 {{- if .test}}
 test: phony vet ## test the codes
@@ -87,6 +97,9 @@ help: phony ## print this help message
 	@awk -F ':|##' '/^[^\t].+?:.*?##/ { printf "${GREEN}%-20s${RESET}%s\n", $$1, $$NF }' $(MAKEFILE_LIST)
 `
 
+// Version is the version of the binary. This is set by -ldflags during the build.
+var Version = "dev"
+
 func main() {
 	t := flag.Bool("test", false, "Adds test to makefile")
 	b := flag.Bool("bench", false, "Adds bench to makefile")
@@ -99,8 +112,14 @@ func main() {
 	tr := flag.Bool("testRace", false, "Adds race checking tests to makefile")
 	l := flag.Bool("library", false, "Creates a library makefile")
 	m := flag.String("mod", "", "Creates a mod file. Specify the source control path (github.com/user/project).")
+	v := flag.Bool("version", false, "Displays the version of this binary")
 
 	flag.Parse()
+
+	if *v {
+		fmt.Printf("Version: %s\n", Version)
+		os.Exit(0)
+	}
 
 	if len(flag.Args()) != 1 {
 		fmt.Println("Expected use: maker DIRNAME")

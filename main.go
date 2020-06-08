@@ -179,4 +179,8 @@ go 1.14
 			panic(err)
 		}
 	}
+	err = ioutil.WriteFile(dirName+string(os.PathSeparator)+".gitignore", []byte(`bin/`), 0644)
+	if err != nil {
+		panic(err)
+	}
 }
